@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Radar de Hardware + Discord</title>
+  <style>
+    :root {
+      --bg: #121214;
+      --surface: #202024;
+      --surface-light: #29292e;
+      --border: #323238;
+      --text: #e1e1e6;
+      --muted: #a8a8b3;
+      --green: #00875f;
+      --green-hover: #00b37e;
+      --blue: #0077b6;
+      --blue-hover: #0096c7;
+      --red: #f75a68;
+    }
+
+    * {
+      box-sizing: border-box;
+      font-family: system-ui, -apple-system, sans-serif;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      margin: 0;
+      padding: 2rem 1rem;
+    }
+
+    .container {
+      max-width: 1080px;
+      margin: 0 auto;
+    }
+
+    .header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 1.6rem;
+    }
+
+    h2 {
+      margin: 0 0 1rem 0;
+      font-size: 1.15rem;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      margin: 0.3rem 0 0 0;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 1.5rem;
+      border-radius: 8px;
+      margin-bottom: 1.5rem;
+    }
+
+    /* Chips de hardware rápido */
+    .chips-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+      align-items: center;
+    }
+
+    .chips-label {
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    .chip {
+      background: var(--surface-light);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 0.35rem 0.75rem;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      cursor: pointer;
+    }
+
+    .chip:hover {
+      border-color: var(--green-hover);
+      color: #04d361;
+    }
+
+    .busca-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr auto;
+      gap: 1rem;
+      align-items: end;
+    }
+
+    @media (max-width: 780px) {
+      .busca-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .lojas-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.2rem;
+      margin-top: 1rem;
+      align-items: center;
+    }
+
+    .loja-check {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      font-size: 0.9rem;
+      cursor: pointer;
+      color: var(--text);
+    }
+
+    .loja-check input {
+      width: auto;
+      accent-color: var(--green-hover);
+    }
+
+    label {
+      display: block;
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-bottom: 0.4rem;
+    }
+
+    input[type="text"],
+    input[type="number"],
+    input[type="url"] {
+      width: 100%;
+      padding: 0.65rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-size: 0.95rem;
+    }
+
+    input:focus {
+      outline: 1px solid var(--green-hover);
+    }
+
+    input:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+
+    button {
+      border: none;
+      padding: 0.68rem 1.2rem;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 0.9rem;
+      color: white;
+      white-space: nowrap;
+    }
+
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .btn-primary {
+      background: var(--green);
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: var(--green-hover);
+    }
+
+    .btn-primary.editando {
+      background: var(--blue);
+    }
+
+    .btn-primary.editando:hover:not(:disabled) {
+      background: var(--blue-hover);
+    }
+
+    .btn-secondary {
+      background: var(--surface-light);
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+
+    .btn-secondary:hover:not(:disabled) {
+      border-color: var(--muted);
+    }
+
+    .btn-cancelar {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      display: none;
+    }
+
+    .erro-msg {
+      color: var(--red);
+      font-size: 0.85rem;
+      margin-top: 0.75rem;
+      display: none;
+    }
+
+    /* Grade de Resultados da Busca */
+    .resultados-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+      gap: 1rem;
+      margin-top: 1.25rem;
+    }
+
+    .res-card {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 0.75rem;
+    }
+
+    .res-topo {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .res-titulo {
+      font-size: 0.88rem;
+      line-height: 1.35;
+      color: var(--text);
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .res-preco {
+      font-size: 1.2rem;
+      font-weight: bold;
+      color: #04d361;
+    }
+
+    .res-acoes {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 0.25rem;
+    }
+
+    .res-acoes button {
+      flex: 1;
+      padding: 0.5rem;
+      font-size: 0.82rem;
+    }
+
+    /* Tabela do Radar */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th,
+    td {
+      text-align: left;
+      padding: 0.85rem;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.9rem;
+    }
+
+    th {
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    a {
+      color: #4cc9f0;
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    .badge {
+      padding: 0.25rem 0.55rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: bold;
+      background: var(--surface-light);
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .badge.loja {
+      color: #e1e1e6;
+      border: 1px solid var(--border);
+    }
+
+    .badge.alvo {
+      background: rgba(4, 211, 97, 0.15);
+      color: #04d361;
+    }
+
+    .acoes-cell {
+      display: flex;
+      gap: 0.4rem;
+    }
+
+    .btn-edit {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: #4cc9f0;
+      padding: 0.35rem 0.65rem;
+      font-size: 0.8rem;
+    }
+
+    .btn-edit:hover {
+      background: rgba(76, 201, 240, 0.1);
+    }
+
+    .btn-del {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--red);
+      padding: 0.35rem 0.65rem;
+      font-size: 0.8rem;
+    }
+
+    .btn-del:hover {
+      background: rgba(247, 90, 104, 0.1);
+    }
+
+    .form-manual-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr auto;
+      gap: 1rem;
+      align-items: end;
+    }
+
+    @media (max-width: 650px) {
+      .form-manual-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div class="header-row">
+      <div>
+        <h1>Radar de Hardware + Discord</h1>
+        <p class="subtitle">Busque componentes em múltiplas lojas e receba alertas quando o preço cair</p>
+      </div>
+      <button class="btn-secondary" id="btn-verificar" onclick="forcarVerificacao()">Verificar Preços Agora</button>
+    </div>
+
+    <!-- 1. BUSCADOR AUTOMÁTICO MULTI-LOJAS -->
+    <div class="card">
+      <h2>Buscar Hardware nas Lojas</h2>
+
+      <div class="chips-row">
+        <span class="chips-label">Sugestões rápidas:</span>
+        <button type="button" class="chip" onclick="selecionarChip('RTX 4070 Super', 3500, 3900)">RTX 4070
+          Super</button>
+        <button type="button" class="chip" onclick="selecionarChip('RTX 5070', 3800, 4300)">RTX 5070</button>
+        <button type="button" class="chip" onclick="selecionarChip('Ryzen 7 5700X3D', 1100, 1450)">Ryzen 7
+          5700X3D</button>
+        <button type="button" class="chip" onclick="selecionarChip('Ryzen 7 5800X3D', 1400, 1800)">Ryzen 7
+          5800X3D</button>
+        <button type="button" class="chip" onclick="selecionarChip('RX 7800 XT', 3000, 3400)">RX 7800 XT</button>
+      </div>
+
+      <form onsubmit="executarBusca(event)">
+        <div class="busca-grid">
+          <div>
+            <label for="termoBusca">Componente / Modelo *</label>
+            <input type="text" id="termoBusca" placeholder="Ex: RTX 4070 Super ou Ryzen 7 5700X3D" required>
+          </div>
+          <div>
+            <label for="precoMinimo">Filtro Mínimo (R$)</label>
+            <input type="number" id="precoMinimo" step="1" placeholder="Ignora cabos/suportes">
+          </div>
+          <div>
+            <label for="alvoPadrao">Seu Preço-Alvo (R$) *</label>
+            <input type="number" id="alvoPadrao" step="0.01" placeholder="Ex: 3800.00" required>
+          </div>
+          <button type="submit" id="btn-buscar" class="btn-primary">Pesquisar Lojas</button>
+        </div>
+
+        <div class="lojas-row">
+          <span class="chips-label">Pesquisar em:</span>
+          <label class="loja-check"><input type="checkbox" name="lojaBusca" value="amazon" checked> Amazon BR</label>
+          <label class="loja-check"><input type="checkbox" name="lojaBusca" value="kabum" checked> KaBuM!</label>
+          <label class="loja-check"><input type="checkbox" name="lojaBusca" value="pichau" checked> Pichau</label>
+          <label class="loja-check"><input type="checkbox" name="lojaBusca" value="terabyte" checked>
+            TerabyteShop</label>
+        </div>
+
+        <div id="erro-busca" class="erro-msg"></div>
+      </form>
+
+      <!-- Resultados encontrados -->
+      <div id="area-resultados" style="display: none;">
+        <div class="resultados-grid" id="grade-resultados"></div>
+      </div>
+    </div>
+
+    <!-- 2. LISTA ATIVA NO RADAR -->
+    <div class="card">
+      <h2>Itens Monitorados no Radar</h2>
+      <div style="overflow-x: auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>Loja</th>
+              <th>Produto</th>
+              <th>Preço Atual</th>
+              <th>Preço-Alvo</th>
+              <th>Status</th>
+              <th>Checagem</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody id="tabela-produtos"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 3. CADASTRO MANUAL POR LINK / EDIÇÃO DE ALVO -->
+    <div class="card" id="card-manual">
+      <h2 id="titulo-manual">Adicionar Link Manualmente (ou Editar Alvo)</h2>
+      <form onsubmit="salvarManualOuEdicao(event)">
+        <div class="form-manual-grid">
+          <div>
+            <label for="urlProduto" id="label-url">Link Direto do Produto *</label>
+            <input type="url" id="urlProduto" placeholder="https://www.kabum.com.br/produto/..." required>
+          </div>
+          <div>
+            <label for="precoAlvo">Preço-Alvo (R$) *</label>
+            <input type="number" id="precoAlvo" step="0.01" placeholder="Ex: 2499.90" required>
+          </div>
+          <div style="display: flex; gap: 0.5rem;">
+            <button type="submit" id="btn-submit" class="btn-primary">Monitorar Link</button>
+            <button type="button" id="btn-cancelar" class="btn-cancelar" onclick="cancelarEdicao()">Cancelar</button>
+          </div>
+        </div>
+        <div id="erro-manual" class="erro-msg"></div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    let produtosCache = [];
+    let resultadosBuscaCache = [];
+    let idEmEdicao = null;
+
+    function escaparHtml(texto) {
+      const div = document.createElement('div');
+      div.textContent = texto;
+      return div.innerHTML;
+    }
+
+    function selecionarChip(termo, minimo, alvo) {
+      document.getElementById('termoBusca').value = termo;
+      document.getElementById('precoMinimo').value = minimo;
+      document.getElementById('alvoPadrao').value = alvo;
+    }
+
+    async function executarBusca(event) {
+      event.preventDefault();
+      const erroBox = document.getElementById('erro-busca');
+      const btnBuscar = document.getElementById('btn-buscar');
+      const areaResultados = document.getElementById('area-resultados');
+      const grade = document.getElementById('grade-resultados');
+
+      erroBox.style.display = 'none';
+
+      const lojas = Array.from(document.querySelectorAll('input[name="lojaBusca"]:checked')).map(
+        (el) => el.value
+      );
+
+      if (lojas.length === 0) {
+        erroBox.textContent = 'Selecione pelo menos uma loja para pesquisar.';
+        erroBox.style.display = 'block';
+        return;
+      }
+
+      btnBuscar.disabled = true;
+      btnBuscar.textContent = 'Pesquisando...';
+
+      const payload = {
+        termo: document.getElementById('termoBusca').value.trim(),
+        precoMinimo: document.getElementById('precoMinimo').value,
+        lojas
+      };
+
+      const res = await fetch('/api/pesquisar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      btnBuscar.disabled = false;
+      btnBuscar.textContent = 'Pesquisar Lojas';
+
+      if (!res.ok) {
+        const err = await res.json();
+        erroBox.textContent = err.erro || 'Erro ao pesquisar nas lojas.';
+        erroBox.style.display = 'block';
+        return;
+      }
+
+      resultadosBuscaCache = await res.json();
+      areaResultados.style.display = 'block';
+
+      if (resultadosBuscaCache.length === 0) {
+        grade.innerHTML = '<p style="color: #a8a8b3;">Nenhum produto encontrado com esses filtros. Tente reduzir o Filtro Mínimo.</p>';
+        return;
+      }
+
+      grade.innerHTML = resultadosBuscaCache
+        .map((item, idx) => {
+          const jaMonitorado = produtosCache.some((p) => p.urlProduto === item.urlProduto);
+          return `
+            <div class="res-card">
+              <div>
+                <div class="res-topo">
+                  <span class="badge loja">${escaparHtml(item.loja)}</span>
+                  <span class="res-preco">R$ ${item.preco.toFixed(2)}</span>
+                </div>
+                <div class="res-titulo" style="margin-top: 0.6rem;" title="${escaparHtml(item.nome)}">
+                  ${escaparHtml(item.nome)}
+                </div>
+              </div>
+              <div class="res-acoes">
+                <a href="${escaparHtml(item.urlProduto)}" target="_blank" rel="noopener" style="display: flex; align-items: center; justify-content: center; border: 1px solid #323238; border-radius: 6px; padding: 0.45rem; font-size: 0.8rem;">Ver Loja</a>
+                <button class="btn-primary" id="btn-res-${idx}" ${jaMonitorado ? 'disabled' : ''} onclick="adicionarDaBusca(${idx})">
+                  ${jaMonitorado ? 'No Radar ✓' : '+ Radar'}
+                </button>
+              </div>
+            </div>
+          `;
+        })
+        .join('');
+    }
+
+    async function adicionarDaBusca(index) {
+      const item = resultadosBuscaCache[index];
+      const alvo = document.getElementById('alvoPadrao').value;
+      const btn = document.getElementById(`btn-res-${index}`);
+
+      if (!alvo || Number(alvo) <= 0) {
+        alert('Preencha o campo "Seu Preço-Alvo (R$)" antes de adicionar.');
+        document.getElementById('alvoPadrao').focus();
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Salvando...';
+
+      const res = await fetch('/api/produtos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nome: item.nome,
+          loja: item.loja,
+          urlProduto: item.urlProduto,
+          precoAtual: item.preco,
+          imagem: item.imagem,
+          precoAlvo: alvo
+        })
+      });
+
+      if (res.ok) {
+        btn.textContent = 'No Radar ✓';
+        await carregarProdutos();
+      } else {
+        btn.disabled = false;
+        btn.textContent = '+ Radar';
+      }
+    }
+
+    async function carregarProdutos() {
+      const res = await fetch('/api/produtos');
+      produtosCache = await res.json();
+      const tbody = document.getElementById('tabela-produtos');
+
+      if (produtosCache.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="color: #a8a8b3;">Nenhum componente monitorado ainda. Use a busca acima!</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = produtosCache
+        .map((p) => {
+          const noAlvo = p.precoAtual <= p.precoAlvo;
+          return `
+            <tr>
+              <td><span class="badge loja">${escaparHtml(p.loja)}</span></td>
+              <td><a href="${escaparHtml(p.urlProduto)}" target="_blank" rel="noopener">${escaparHtml(p.nome)}</a></td>
+              <td><strong>R$ ${p.precoAtual.toFixed(2)}</strong></td>
+              <td>R$ ${p.precoAlvo.toFixed(2)}</td>
+              <td><span class="badge ${noAlvo ? 'alvo' : ''}">${noAlvo ? 'No Alvo!' : 'Aguardando'}</span></td>
+              <td style="color: #a8a8b3; white-space: nowrap;">${escaparHtml(p.ultimaVerificacao || '-')}</td>
+              <td>
+                <div class="acoes-cell">
+                  <button class="btn-edit" onclick="prepararEdicao(${p.id})">Editar</button>
+                  <button class="btn-del" onclick="excluirProduto(${p.id})">Excluir</button>
+                </div>
+              </td>
+            </tr>
+          `;
+        })
+        .join('');
+    }
+
+    function prepararEdicao(id) {
+      const produto = produtosCache.find((p) => p.id === id);
+      if (!produto) return;
+
+      idEmEdicao = id;
+      const inputUrl = document.getElementById('urlProduto');
+      const inputAlvo = document.getElementById('precoAlvo');
+      const btnSubmit = document.getElementById('btn-submit');
+
+      inputUrl.value = produto.urlProduto;
+      inputUrl.disabled = true;
+      inputAlvo.value = produto.precoAlvo;
+
+      document.getElementById('titulo-manual').textContent = `Editando Preço-Alvo: ${produto.nome}`;
+      document.getElementById('label-url').textContent = 'Link do Produto (bloqueado na edição)';
+      btnSubmit.textContent = 'Atualizar Alvo';
+      btnSubmit.classList.add('editando');
+      document.getElementById('btn-cancelar').style.display = 'inline-block';
+
+      document.getElementById('card-manual').scrollIntoView({ behavior: 'smooth' });
+      inputAlvo.focus();
+    }
+
+    function cancelarEdicao() {
+      idEmEdicao = null;
+      const inputUrl = document.getElementById('urlProduto');
+      const inputAlvo = document.getElementById('precoAlvo');
+      const btnSubmit = document.getElementById('btn-submit');
+
+      inputUrl.value = '';
+      inputUrl.disabled = false;
+      inputAlvo.value = '';
+
+      document.getElementById('titulo-manual').textContent = 'Adicionar Link Manualmente (ou Editar Alvo)';
+      document.getElementById('label-url').textContent = 'Link Direto do Produto *';
+      btnSubmit.textContent = 'Monitorar Link';
+      btnSubmit.classList.remove('editando');
+      document.getElementById('btn-cancelar').style.display = 'none';
+    }
+
+    async function salvarManualOuEdicao(event) {
+      event.preventDefault();
+      const erroBox = document.getElementById('erro-manual');
+      const btnSubmit = document.getElementById('btn-submit');
+      erroBox.style.display = 'none';
+      btnSubmit.disabled = true;
+
+      if (idEmEdicao !== null) {
+        btnSubmit.textContent = 'Salvando...';
+        const res = await fetch(`/api/produtos/${idEmEdicao}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ precoAlvo: document.getElementById('precoAlvo').value })
+        });
+        btnSubmit.disabled = false;
+
+        if (!res.ok) {
+          const err = await res.json();
+          erroBox.textContent = err.erro || 'Erro ao atualizar.';
+          erroBox.style.display = 'block';
+          btnSubmit.textContent = 'Atualizar Alvo';
+          return;
+        }
+
+        cancelarEdicao();
+        carregarProdutos();
+        return;
+      }
+
+      btnSubmit.textContent = 'Lendo link...';
+      const res = await fetch('/api/produtos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          urlProduto: document.getElementById('urlProduto').value.trim(),
+          precoAlvo: document.getElementById('precoAlvo').value
+        })
+      });
+
+      btnSubmit.disabled = false;
+      btnSubmit.textContent = 'Monitorar Link';
+
+      if (!res.ok) {
+        const err = await res.json();
+        erroBox.textContent = err.erro || 'Erro ao ler o link.';
+        erroBox.style.display = 'block';
+        return;
+      }
+
+      document.getElementById('urlProduto').value = '';
+      document.getElementById('precoAlvo').value = '';
+      carregarProdutos();
+    }
+
+    async function forcarVerificacao() {
+      const btn = document.getElementById('btn-verificar');
+      btn.disabled = true;
+      btn.textContent = 'Verificando lojas...';
+
+      await fetch('/api/verificar', { method: 'POST' });
+      await carregarProdutos();
+
+      btn.disabled = false;
+      btn.textContent = 'Verificar Preços Agora';
+    }
+
+    async function excluirProduto(id) {
+      if (idEmEdicao === id) cancelarEdicao();
+      await fetch(`/api/produtos/${id}`, { method: 'DELETE' });
+      carregarProdutos();
+    }
+
+    carregarProdutos();
+  </script>
+</body>
+
+</html>
